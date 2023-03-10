@@ -1,48 +1,117 @@
 import React, { useEffect, useState } from 'react'
 // import notes from "../assets/Data";
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { BsArrowLeft } from 'react-icons/bs'
 
 const NotePage = () => {
-    const {noteId} = useParams()
-    const [note, setNote] = useState(null);
-    console.log(noteId)
+  let { noteId } = useParams();
+  const navigate = useNavigate();
+  let [note, setNote] = useState(null);
 
-    useEffect(() => {
-      getNote()
+  useEffect(() => {
+    getNote();
+  }, [noteId]);
+
+  let getNote = async () => {
+    if (noteId === 'new') return
+    let response = await fetch(`http://localhost:8000/notes/${noteId}`);
+    let data = await response.json();
+
+    setNote(data);
+  };
+
+  let createNote = async () => {
+    await fetch(`http://localhost:8000/notes/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ ...note, updated: new Date() }),
       
-    },[noteId])
+    });
+  };
 
-    const getNote = async () => {
-      let response = await fetch(`http://localhost:8000/notes/${noteId}`)
-      console.log(noteId)
-      let data = await response.json()
-      setNote(data)
-      console.log(data)
+  let updateNote = async () => {
+    await fetch(`http://localhost:8000/notes/${noteId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ ...note, updated: new Date() }),
+    });
+  };
+
+  let deleteNote = async () => {
+    await fetch(`http://localhost:8000/notes/${noteId}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(note),
+    });
+    navigate("/");
+  };
+
+
+  
+
+
+  
+
+  // let handleSubmit = async () => {
+  //   if (noteId !== "new" && !note.body) {
+  //     deleteNote();
+  //   } else if (noteId === "new") {
+  //     updateNote();
+  //   } else if (noteId === "new" && note !== null) {
+  //     createNote();
+  //   }
+  //   await updateNote();
+  //   navigate("/");
+  // };
+
+  let handleSubmit = async () => {
+    
+
+    
+    if(noteId !== 'new' && !note.body) {
+      deleteNote()
+    } else if (noteId !== 'new') {
+      updateNote()
+    } else if(noteId === 'new' && note !== null){
+      createNote()
     }
-
-    // const note = notes.find(note => note.id === Number(id))
+    
+    
+    navigate('/')
+  }
 
   return (
     <div className="note">
       <div className="note-header">
         <h3>
           <Link to="/">
-            <BsArrowLeft />
+            <BsArrowLeft onClick={handleSubmit} />
           </Link>
         </h3>
+
+        {noteId !== 'new' ? (
+          <button onClick={deleteNote}>Delete</button>
+        ) : (
+          <button onClick={handleSubmit}>Done</button>
+        )}
       </div>
 
-      {note ? (
-        <div className="note-body">
-          <p>{note.body}</p>
-        </div>
-      ) : (
-        <div>Loading note...</div>
-      )}
+      <textarea
+        onChange={(e) => {
+          setNote({ ...note, body: e.target.value });
+        }}
+        value={note?.body}
+      ></textarea>
+
+      
     </div>
   );
-  
-}
+};
 
 export default NotePage;
